@@ -39,11 +39,6 @@ BUILD_DIR=$1
 CACHE_DIR=$2
 ENV_DIR=$3
 
-mkdir -p "$BUILD_DIR/.node/"
-cd $BUILD_DIR
-export PATH="$BUILD_DIR/.node/bin":$PATH
-
-
 if [ -f $BUILD_DIR/.crystal-version ]; then
   CRYSTAL_VERSION=`cat $BUILD_DIR/.crystal-version | tr -d '\012'`
   CRYSTAL_VERSION_REASON='due to .crystal-version file'
@@ -76,7 +71,7 @@ echo "       Downloading and installing node 5.11.1..."
     echo "Unable to download node 5.11.1; does it exist?" && false
   fi
   tar xzf /tmp/node.tar.gz -C /tmp
-  mv /tmp/node-v5.11.1-$os-$cpu/* $BUILD_DIR
+  rsync -a /tmp/node-v5.11.1-$os-$cpu/* $BUILD_DIR
   chmod +x $BUILD_DIR/bin/node
   chmod +x $BUILD_DIR/bin/npm
 
