@@ -23,46 +23,24 @@ function json_value() {
   awk -F"[,:}]" '{for(i=1;i<=NF;i++){if($i~/\042'$KEY'\042/){print $(i+1)}}}' | tr -d ' "' | sed -n ${num}p
 }
 
-install_nodejs() {
-  local dir="$1"
-
-  echo "Resolving node version ${version:-(latest stable)} via semver.io..."
-  local version=$(curl --silent --get --retry 5 --retry-max-time 15 --data-urlencode "range=${version}" https://semver.herokuapp.com/node/resolve)
-
-  echo "Downloading and installing node $version..."
-  local download_url="https://s3pository.heroku.com/node/v$version/node-v$version-$os-$cpu.tar.gz"
-  local code=$(curl "$download_url" --silent --fail --retry 5 --retry-max-time 15 -o /tmp/node.tar.gz --write-out "%{http_code}")
-  if [ "$code" != "200" ]; then
-    echo "Unable to download node $version; does it exist?" && false
-  fi
-  tar xzf /tmp/node.tar.gz -C /tmp
-  rm -rf $dir/bin/node
-  rm -rf $dir/bin/npm
-  mv /tmp/node-v$version-$os-$cpu/* $dir
-  chmod +x $dir/bin/*
+get_os() {
+  uname | tr A-Z a-z
 }
 
-install_node_modules() {
-  local build_dir=${1:-}
-
-  if [ -e $build_dir/package.json ]; then
-    cd $build_dir
-
-    if [ -e $build_dir/npm-shrinkwrap.json ]; then
-      echo "Installing node modules (package.json + shrinkwrap)"
-    else
-      echo "Installing node modules (package.json)"
-    fi
-    npm install --unsafe-perm --userconfig $build_dir/.npmrc 2>&1
+get_cpu() {
+  if [[ "$(uname -p)" = "i686" ]]; then
+    echo "x86"
   else
-    echo "Skipping (no package.json)"
+    echo "x64"
   fi
 }
+
+local os=$(get_os)
+local cpu=$(get_cpu)
 
 BUILD_DIR=$1
 CACHE_DIR=$2
 ENV_DIR=$3
-
 
 mkdir -p "$BUILD_DIR/.node/"
 cd $BUILD_DIR
@@ -89,10 +67,22 @@ curl -sL $CRYSTAL_URL | tar xz -C $CRYSTAL_DIR --strip-component=1
 # Build the project
 cd $BUILD_DIR
 
-install_nodejs "$node_engine" "$BUILD_DIR/.node"
-install_node_modules "$BUILD_DIR"
 
-echo "-----> Installing Dependencies"
+echo "-----> Installing Node JS"
+echo "       Downloading and installing node 5.11.1..."
+  local download_url="https://s3pository.heroku.com/node/v5.11.1/node-v5.11.1-$os-$cpu.tar.gz"
+  local code=$(curl "$download_url" --silent --fail --retry 5 --retry-max-time 15 -o /tmp/node.tar.gz --write-out "%{http_code}")
+  if [ "$code" != "200" ]; then
+    echo "Unable to download node 5.11.1; does it exist?" && false
+  fi
+  tar xzf /tmp/node.tar.gz -C /tmp
+  mv /tmp/node-v5.11.1-$os-$cpu/* $BUILD_DIR
+  chmod +x $BUILD_DIR/bin/node
+  chmod +x $BUILD_DIR/bin/npm
+
+export PATH=$PATH:$BUILD_DIR/bin
+
+echo "-----> Installing Crystal Dependencies"
 $CRYSTAL_DIR/bin/crystal deps
 
 eval $(parse_yaml shard.yml "shard_")
