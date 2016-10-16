@@ -35,9 +35,6 @@ get_cpu() {
   fi
 }
 
-local os=$(get_os)
-local cpu=$(get_cpu)
-
 BUILD_DIR=$1
 CACHE_DIR=$2
 ENV_DIR=$3
@@ -68,10 +65,13 @@ curl -sL $CRYSTAL_URL | tar xz -C $CRYSTAL_DIR --strip-component=1
 cd $BUILD_DIR
 
 
-echo "-----> Installing Node JS"
+os=$(get_os)
+cpu=$(get_cpu)
+
+echo "-----> Installing Node JS (5.11.1)"
 echo "       Downloading and installing node 5.11.1..."
-  local download_url="https://s3pository.heroku.com/node/v5.11.1/node-v5.11.1-$os-$cpu.tar.gz"
-  local code=$(curl "$download_url" --silent --fail --retry 5 --retry-max-time 15 -o /tmp/node.tar.gz --write-out "%{http_code}")
+  download_url="https://s3pository.heroku.com/node/v5.11.1/node-v5.11.1-$os-$cpu.tar.gz"
+  code=$(curl "$download_url" --silent --fail --retry 5 --retry-max-time 15 -o /tmp/node.tar.gz --write-out "%{http_code}")
   if [ "$code" != "200" ]; then
     echo "Unable to download node 5.11.1; does it exist?" && false
   fi
