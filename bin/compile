@@ -75,17 +75,17 @@ echo "       Downloading and installing node 5.11.1..."
   chmod +x $BUILD_DIR/bin/node
   chmod +x $BUILD_DIR/bin/npm
 
-export PATH=$PATH:$BUILD_DIR/bin
+export PATH=$PATH:$BUILD_DIR/bin:$CRYSTAL_DIR/bin
 
 echo "-----> Installing Crystal Dependencies"
-$CRYSTAL_DIR/bin/crystal deps
+crystal deps
 
 eval $(parse_yaml shard.yml "shard_")
 echo "-----> Compiling src/${shard_name}.cr (auto-detected from shard.yml)"
-$CRYSTAL_DIR/bin/crystal build src/${shard_name}.cr --release -o app
+crystal build src/${shard_name}.cr --release -o app
 
 echo "-----> Compiling bin folders"
-find bin -name "*.cr" -exec $CRYSTAL_DIR/bin/crystal build {} --release \;
+make all
 
 echo "----> Compiling assets"
 make assets_compile
